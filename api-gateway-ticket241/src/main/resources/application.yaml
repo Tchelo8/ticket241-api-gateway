@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: api-gateway-ticket241
+  cloud:
+    gateway:
+      routes:
+        # Route pour event-service
+        - id: event-service-route
+          uri: lb://EVENT-SERVICE-TICKET241
+          predicates:
+            - Path=/events/**
+          filters:
+            - StripPrefix=1
+
+        # Route pour ticket-service
+        - id: ticket-service-route
+          uri: lb://TICKET-SERVICE-TICKET241
+          predicates:
+            - Path=/tickets/**
+          filters:
+            - StripPrefix=1
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8781/eureka/
