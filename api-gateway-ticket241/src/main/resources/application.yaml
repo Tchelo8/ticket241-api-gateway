@@ -1,24 +1,45 @@
 spring:
   application:
     name: api-gateway-ticket241
+
   cloud:
     gateway:
       routes:
-        # Route pour event-service
+
+        # Route pour Auth Service (sansle  filtre JWT)
+        - id: auth-service-route
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: authServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+        # Route pour Event Service (avec le filtre JWT)
         - id: event-service-route
           uri: lb://EVENT-SERVICE-TICKET241
           predicates:
-            - Path=/events/**
+            - Path=/api/events/**
           filters:
-            - StripPrefix=1
-
-        # Route pour ticket-service
+            - JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: eventServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+        # Route pour Ticket Service ( avec le filtre JWT)
         - id: ticket-service-route
           uri: lb://TICKET-SERVICE-TICKET241
           predicates:
-            - Path=/tickets/**
+            - Path=/api/tickets/**
           filters:
-            - StripPrefix=1
+            - JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: ticketServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+      default-filters:
+        - name: GlobalLoggingFilter
 
 server:
   port: 8080
@@ -27,3 +48,21 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8781/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+
+#  j'ai utilisé la même clé secrète que dans mon auth-service pour que les token soient reconnus!
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+# Logging pour debugging
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.tchelo: DEBUG
+
+
+
