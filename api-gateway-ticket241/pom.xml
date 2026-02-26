@@ -46,6 +46,12 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- Circuit Breaker avec Resilience4j -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+		</dependency>
+
 		<!-- JWT pour validation mes tokens et envoyer les requêtes aux autres services -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

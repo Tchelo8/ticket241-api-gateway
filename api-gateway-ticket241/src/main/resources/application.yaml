@@ -6,7 +6,7 @@ spring:
     gateway:
       routes:
 
-        # Route pour Auth Service (sansle  filtre JWT)
+        # Route pour Auth Service (sans le filtre JWT)
         - id: auth-service-route
           uri: lb://AUTH-SERVICE
           predicates:
@@ -16,6 +16,7 @@ spring:
               args:
                 name: authServiceCircuitBreaker
                 fallbackUri: forward:/fallback
+
         # Route pour Event Service (avec le filtre JWT)
         - id: event-service-route
           uri: lb://EVENT-SERVICE-TICKET241
@@ -27,7 +28,8 @@ spring:
               args:
                 name: eventServiceCircuitBreaker
                 fallbackUri: forward:/fallback
-        # Route pour Ticket Service ( avec le filtre JWT)
+
+        # Route pour Ticket Service (avec le filtre JWT)
         - id: ticket-service-route
           uri: lb://TICKET-SERVICE-TICKET241
           predicates:
@@ -38,8 +40,17 @@ spring:
               args:
                 name: ticketServiceCircuitBreaker
                 fallbackUri: forward:/fallback
-      default-filters:
-        - name: GlobalLoggingFilter
+
+        # Route pour Notification Service (SANS le filtre JWT)
+        - id: notification-service-route
+          uri: lb://NOTIFICATION-SERVICE-TICKET241
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCircuitBreaker
+                fallbackUri: forward:/fallback
 
 server:
   port: 8080
@@ -53,8 +64,7 @@ eureka:
   instance:
     prefer-ip-address: true
 
-
-#  j'ai utilisé la même clé secrète que dans mon auth-service pour que les token soient reconnus!
+# JWT Configuration
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 
@@ -63,6 +73,62 @@ logging:
   level:
     org.springframework.cloud.gateway: INFO
     com.tchelo: DEBUG
+    io.github.resilience4j: DEBUG
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 100
+        slow-call-duration-threshold: 3s
 
+    instances:
+      authServiceCircuitBreaker:
+        base-config: default
 
+      eventServiceCircuitBreaker:
+        base-config: default
+        failure-rate-threshold: 60
+
+      ticketServiceCircuitBreaker:
+        base-config: default
+
+      # Configuration pour Notification Service
+      notificationServiceCircuitBreaker:
+        base-config: default
+        failure-rate-threshold: 60
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s
+    instances:
+      authServiceCircuitBreaker:
+        timeout-duration: 5s
+      eventServiceCircuitBreaker:
+        timeout-duration: 3s
+      ticketServiceCircuitBreaker:
+        timeout-duration: 3s
+      # Timeout pour Notification Service (plus long pour emails)
+      notificationServiceCircuitBreaker:
+        timeout-duration: 5s
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
