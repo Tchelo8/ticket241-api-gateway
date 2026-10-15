@@ -15,7 +15,7 @@ spring:
             - name: CircuitBreaker
               args:
                 name: authServiceCircuitBreaker
-                fallbackUri: forward:/fallback
+                fallbackUri: forward:/fallback/auth
 
         # Route pour Event Service (avec le filtre JWT)
         - id: event-service-route
@@ -63,6 +63,9 @@ eureka:
     register-with-eureka: true
   instance:
     prefer-ip-address: true
+    ip-address: 127.0.0.1
+    hostname: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}
 
 # JWT Configuration
 jwt:
@@ -109,9 +112,10 @@ resilience4j:
     configs:
       default:
         timeout-duration: 3s
+
     instances:
       authServiceCircuitBreaker:
-        timeout-duration: 5s
+        timeout-duration: 8s
       eventServiceCircuitBreaker:
         timeout-duration: 3s
       ticketServiceCircuitBreaker:

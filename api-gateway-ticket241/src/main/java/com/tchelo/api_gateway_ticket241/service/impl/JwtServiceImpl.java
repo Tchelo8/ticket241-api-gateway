@@ -56,6 +56,13 @@ public class JwtServiceImpl implements JwtService {
     }
 
 
+    // Extraction de l'email du token
+    @Override
+    public String extractEmail(String token) {
+        return extractAllClaims(token).get("email", String.class);
+    }
+
+
     // Extrait une claim spécifique
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);

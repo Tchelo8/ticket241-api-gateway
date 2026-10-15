@@ -61,13 +61,22 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             try {
                 String phoneNumber = jwtService.extractPhoneNumber(token);
                 List<String> roles = jwtService.extractRoles(token);
+                String email = jwtService.extractEmail(token);
 
                 log.info("Token valide - Utilisateur: {} - Rôles: {}", phoneNumber, roles);
 
-                // 5. Ajouter les headers pour les services downstream
+                // 5. Ajouter les headers pour les services downstream. X-User-Email est toujours
+                // réécrit ou retiré : un client ne doit pas pouvoir l'envoyer lui-même
                 ServerHttpRequest modifiedRequest = request.mutate()
                         .header("X-User-Id", phoneNumber)
                         .header("X-User-Roles", String.join(",", roles))
+                        .headers(headers -> {
+                            if (email != null) {
+                                headers.set("X-User-Email", email);
+                            } else {
+                                headers.remove("X-User-Email");
+                            }
+                        })
                         .build();
 
                 log.debug("Headers ajoutés: X-User-Id={}, X-User-Roles={}", phoneNumber, roles);

@@ -11,4 +11,7 @@ public interface JwtService {
 
    //extraire le rôle du token
     List<String> extractRoles(String token);
+
+    //extraire l'email du token (null pour les tokens émis avant l'ajout de la claim)
+    String extractEmail(String token);
 }
