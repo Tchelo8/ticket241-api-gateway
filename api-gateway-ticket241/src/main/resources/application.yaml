@@ -41,12 +41,14 @@ spring:
                 name: ticketServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
-        # Route pour Notification Service (SANS le filtre JWT)
+        # Route pour Notification Service (avec le filtre JWT) : sans lui, n'importe qui pouvait envoyer
+        # des emails depuis l'adresse Ticket241 ou lire les préférences et l'historique des utilisateurs
         - id: notification-service-route
           uri: lb://NOTIFICATION-SERVICE-TICKET241
           predicates:
             - Path=/api/notifications/**
           filters:
+            - JwtAuthenticationFilter
             - name: CircuitBreaker
               args:
                 name: notificationServiceCircuitBreaker

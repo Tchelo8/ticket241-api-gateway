@@ -62,6 +62,21 @@ public class JwtServiceImpl implements JwtService {
         return extractAllClaims(token).get("email", String.class);
     }
 
+    @Override
+    public Long extractStructureId(String token) {
+        return asLong(extractAllClaims(token).get("structureId"));
+    }
+
+    @Override
+    public Long extractAccountId(String token) {
+        return asLong(extractAllClaims(token).get("uid"));
+    }
+
+    // Les nombres d'un JWT reviennent en Integer ou en Long selon leur taille
+    private Long asLong(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
 
     // Extrait une claim spécifique
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

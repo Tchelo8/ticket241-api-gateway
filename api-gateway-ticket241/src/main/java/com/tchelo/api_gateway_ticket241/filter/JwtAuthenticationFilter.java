@@ -62,20 +62,22 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 String phoneNumber = jwtService.extractPhoneNumber(token);
                 List<String> roles = jwtService.extractRoles(token);
                 String email = jwtService.extractEmail(token);
+                Long structureId = jwtService.extractStructureId(token);
+                Long accountId = jwtService.extractAccountId(token);
 
                 log.info("Token valide - Utilisateur: {} - Rôles: {}", phoneNumber, roles);
 
-                // 5. Ajouter les headers pour les services downstream. X-User-Email est toujours
-                // réécrit ou retiré : un client ne doit pas pouvoir l'envoyer lui-même
+                // 5. Ajouter les headers pour les services downstream. Les headers d'identité sont toujours
+                // réécrits ou retirés : un client ne doit jamais pouvoir les envoyer lui-même
                 ServerHttpRequest modifiedRequest = request.mutate()
                         .header("X-User-Id", phoneNumber)
                         .header("X-User-Roles", String.join(",", roles))
                         .headers(headers -> {
-                            if (email != null) {
-                                headers.set("X-User-Email", email);
-                            } else {
-                                headers.remove("X-User-Email");
-                            }
+                            setOrRemove(headers, "X-User-Email", email);
+                            // Structure d'un ROLE_STRUCTURE_ADMIN (event-service limite ses droits à cette structure)
+                            setOrRemove(headers, "X-User-Structure-Id", structureId != null ? structureId.toString() : null);
+                            // Identifiant numérique du compte (notification-service : préférences, historique…)
+                            setOrRemove(headers, "X-User-Account-Id", accountId != null ? accountId.toString() : null);
                         })
                         .build();
 
@@ -89,6 +91,14 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 return onError(exchange, "Erreur lors du traitement du token", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         };
+    }
+
+    private static void setOrRemove(HttpHeaders headers, String name, String value) {
+        if (value != null) {
+            headers.set(name, value);
+        } else {
+            headers.remove(name);
+        }
     }
 
     //Gestion des erreurs : renvoie une réponse JSON
