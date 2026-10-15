@@ -68,8 +68,11 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
 
 # JWT Configuration
+# Secret obligatoire, jamais écrit ici (dépôt public) : variable d'environnement JWT_SECRET ou, en local,
+# fichier non versionné config/application.yaml (voir config/secrets.example.yaml).
+# Doit être IDENTIQUE à celui d'auth-service. Pas de valeur par défaut : sans secret, le service refuse de démarrer.
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET}
 
 # Logging pour debugging
 logging:
