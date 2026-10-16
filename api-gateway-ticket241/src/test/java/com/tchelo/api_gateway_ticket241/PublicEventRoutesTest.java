@@ -65,6 +65,7 @@ class PublicEventRoutesTest {
         assertThat(isPublicRead("/api/events/12/categories/4/availability")).isTrue();
         assertThat(isPublicRead("/api/events/categories/get/all")).isTrue();
         assertThat(isPublicRead("/api/events/cities/get/all/active")).isTrue();
+        assertThat(isPublicRead("/api/events/structures/public")).isTrue();
     }
 
     @Test
@@ -73,6 +74,7 @@ class PublicEventRoutesTest {
         assertThat(isPublicRead("/api/events/admin/slug/concert-2026")).isFalse();
         assertThat(isPublicRead("/api/events/structure/1")).isFalse();
         assertThat(isPublicRead("/api/events/structures/all")).isFalse();
+        assertThat(isPublicRead("/api/events/structures/1")).isFalse();
         assertThat(isPublicRead("/api/events/id/1")).isFalse();
         assertThat(isPublicRead("/api/events/3f2b1c4d-1111-2222-3333-444455556666/publish")).isFalse();
     }
