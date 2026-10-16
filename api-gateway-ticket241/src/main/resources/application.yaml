@@ -67,6 +67,26 @@ spring:
                 name: eventServiceCircuitBreaker
                 fallbackUri: forward:/fallback
 
+        # Achat SANS compte (route PUBLIQUE) : réservation, paiement et billets d'une commande invité,
+        # protégés par le jeton de la commande ou une session ouverte par code (headers X-Guest-*).
+        # Headers d'identité SUPPRIMÉS comme pour les routes publiques d'événements ; order: -1 → avant
+        # la route protégée. Le rattachement à un compte (/api/tickets/order/*/claim-guest) reste derrière le JWT.
+        - id: ticket-service-guest-route
+          uri: lb://TICKET-SERVICE-TICKET241
+          order: -1
+          predicates:
+            - Path=/api/tickets/guest/**
+          filters:
+            - RemoveRequestHeader=X-User-Id
+            - RemoveRequestHeader=X-User-Roles
+            - RemoveRequestHeader=X-User-Email
+            - RemoveRequestHeader=X-User-Structure-Id
+            - RemoveRequestHeader=X-User-Account-Id
+            - name: CircuitBreaker
+              args:
+                name: ticketServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
         # Route pour Ticket Service (avec le filtre JWT)
         - id: ticket-service-route
           uri: lb://TICKET-SERVICE-TICKET241
