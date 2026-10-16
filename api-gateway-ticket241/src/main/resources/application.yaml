@@ -17,7 +17,45 @@ spring:
                 name: authServiceCircuitBreaker
                 fallbackUri: forward:/fallback/auth
 
-        # Route pour Event Service (avec le filtre JWT)
+        # Routes PUBLIQUES d'Event Service (sans JWT) : un visiteur peut parcourir les événements avant
+        # de créer un compte. Uniquement des lectures (GET) listées une à une, plus le compteur de vues.
+        # Les headers d'identité sont SUPPRIMÉS : un client ne peut pas se faire passer pour un admin
+        # en les envoyant lui-même. order: -1 → évaluées avant la route protégée ci-dessous.
+        - id: event-service-public-read-route
+          uri: lb://EVENT-SERVICE-TICKET241
+          order: -1
+          predicates:
+            - Method=GET
+            - Path=/api/events/all,/api/events/search,/api/events/upcoming,/api/events/featured,/api/events/slug/*,/api/events/category/*,/api/events/city/*,/api/events/{uuid:[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+},/api/events/{eventId:[0-9]+}/categories/{categoryId:[0-9]+},/api/events/{eventId:[0-9]+}/categories/{categoryId:[0-9]+}/availability,/api/events/categories/get/all,/api/events/categories/{uuid:[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+},/api/events/cities/**
+          filters:
+            - RemoveRequestHeader=X-User-Id
+            - RemoveRequestHeader=X-User-Roles
+            - RemoveRequestHeader=X-User-Email
+            - RemoveRequestHeader=X-User-Structure-Id
+            - RemoveRequestHeader=X-User-Account-Id
+            - name: CircuitBreaker
+              args:
+                name: eventServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: event-service-public-view-route
+          uri: lb://EVENT-SERVICE-TICKET241
+          order: -1
+          predicates:
+            - Method=POST
+            - Path=/api/events/{uuid:[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+}/view
+          filters:
+            - RemoveRequestHeader=X-User-Id
+            - RemoveRequestHeader=X-User-Roles
+            - RemoveRequestHeader=X-User-Email
+            - RemoveRequestHeader=X-User-Structure-Id
+            - RemoveRequestHeader=X-User-Account-Id
+            - name: CircuitBreaker
+              args:
+                name: eventServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # Route pour Event Service (avec le filtre JWT) : tout le reste (création, gestion, back-office…)
         - id: event-service-route
           uri: lb://EVENT-SERVICE-TICKET241
           predicates:
